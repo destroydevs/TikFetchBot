@@ -10,6 +10,19 @@
 > Используется только публичное API, доступное всем разработчикам.\
 > Я не несу ответственности за действия пользователей.
 
+### ⚡ Quick Start Guide
+
+1. **Open Bot**  
+   👉 [@DestroyGPT_Bot](https://t.me/destroygpt_bot) 👈
+
+2. **Send TikTok URL**  
+   `https://vm.tiktok.com/...`  
+   `https://www.tiktok.com/...`
+
+3. **Get Content**  
+   🎬 Video (MP4) + 🎧 Audio (MP3)  
+   ⏳ Processing time: ~1-3 sec
+
 # 🔧 **Key Features**
 
 ## ✅ Rust-Powered Core
