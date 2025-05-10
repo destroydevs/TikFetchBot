@@ -87,3 +87,9 @@ Clone git repo:
 Building:
 ```cargo build --release```
 
+## How to start?
+You need create .env file in folder with the builded file.\
+.env file must containts the bot token.
+
+Bot token you can get here: <a href="https://t.me/BotFather">@BotFather</a>
+
