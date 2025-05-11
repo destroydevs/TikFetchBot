@@ -7,7 +7,6 @@ mod fetcher;
 mod bot;
 mod data;
 mod parser;
-mod pair;
 
 #[tokio::main]
 async fn main() {
@@ -19,11 +18,11 @@ async fn main() {
 
     let slice = &bytes[..size];
 
-    let string = std::str::from_utf8(slice).unwrap();
+    let token = std::str::from_utf8(slice).unwrap();
     println!("{}", ".env successfully fetched!".bright_blue());
 
     println!("{}", "Starting bot...".bright_blue());
-    let teloxide_bot = Bot::new(string);
+    let teloxide_bot = Bot::new(token);
 
     // start bot
     println!("{}", "Bot started successfully!".bright_blue());
