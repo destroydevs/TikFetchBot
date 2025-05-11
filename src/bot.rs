@@ -1,13 +1,12 @@
-use std::thread;
-use std::time::Duration;
 use crate::data::{add_user, current_timestamp, get_user, has_user, User};
-use crate::fetcher::{parse_tiktok_audio, parse_tiktok_video};
+use crate::fetcher::{parse_tiktok_content, ContentType, Media};
 use crate::parser::is_tiktok_url;
 use reqwest::Url;
+use std::cmp::PartialEq;
 use teloxide::dispatching::dialogue::GetChatId;
-use teloxide::payloads::{SendMessageSetters, SendVideoSetters};
+use teloxide::payloads::{SendMessageSetters, SendPhotoSetters, SendVideoSetters};
 use teloxide::prelude::{Message, Requester};
-use teloxide::types::{ChatId, InputFile, ParseMode};
+use teloxide::types::{ChatId, InputFile, InputMedia, InputMediaPhoto, ParseMode};
 use teloxide::Bot;
 
 pub async fn start(bot: Bot) {
@@ -99,7 +98,7 @@ pub async fn start(bot: Bot) {
                 user_lang
             ).await;
 
-            let download_url = match parse_tiktok_video(&text, user.id.0).await {
+            let media: Box<dyn Media> = match parse_tiktok_content(&text, user.id.0).await {
                 Ok(url) => url,
                 Err(e) => {
                     send_msg(
@@ -115,31 +114,53 @@ pub async fn start(bot: Bot) {
                 },
             };
 
-            tokio::time::sleep(Duration::from_millis(100)).await;
+            if media.get_content_type() == ContentType::Video {
+                bot.send_video(chat_id,
+                               InputFile::url(
+                                   Url::parse(media.get_content_urls()[0]
+                                   .as_str())
+                                   .unwrap()
+                               ))
+                    .caption(media.get_title())
+                    .await
+                    .unwrap();
+            } else if media.get_content_type() == ContentType::Photo {
+                let mut media_vec: Vec<InputMedia> = vec![];
+                let mut has_caption = false;
+                for photo in media.get_content_urls() {
 
-            let audio_url = match parse_tiktok_audio(&text).await {
-                Ok(url) => url,
-                Err(e) => {
-                    send_msg(
-                        &bot,
-                        chat_id,
-                        format!("<b>❌ Download failed!</b>\n\nReason: <code>{}</code>\n\nPlease try again later! 🎬",
-                                e).as_str(),
-                        format!("<b>❌ Скачивание не удалось!</b>\n\nПричина: <code>{}</code>\n\nПопробуйте позже! 🎬",
-                                e).as_str(),
-                        user_lang
-                    ).await;
-                    return Ok(())
+                    let mut photo_media = InputMediaPhoto::new(
+                        InputFile::url(
+                            Url::parse(&photo).unwrap()
+                        )
+                    );
+
+                    if !has_caption {
+                        photo_media = photo_media.caption(media.get_title());
+                        has_caption = true;
+                    }
+
+                    media_vec.push(
+                        InputMedia::Photo(
+                            photo_media,
+                        )
+                    )
+
                 }
-            };
 
-            bot.send_video(chat_id, InputFile::url(
-                Url::parse(download_url.key()).unwrap())).caption(download_url.value())
-                .await.unwrap();
+                bot.send_media_group(chat_id,media_vec)
+                    .await
+                    .unwrap();
 
-            tokio::time::sleep(Duration::from_millis(100)).await;
+            }
 
-            bot.send_audio(chat_id, InputFile::url(Url::parse(&audio_url).unwrap())).await.unwrap();
+            bot.send_audio(chat_id,
+                           InputFile::url(
+                               Url::parse(&media.get_audio_url())
+                                   .unwrap()
+                           ))
+                .await
+                .unwrap();
 
         }
 
@@ -148,12 +169,26 @@ pub async fn start(bot: Bot) {
     }).await;
 
     async fn send_msg(bot: &Bot, chat_id: ChatId, english: &str, russian: &str, lang: &String) {
+
         let mut text = english;
-        if lang.eq("ru") {
+
+        if lang.eq("ru") // russia
+            || lang.eq("ua") // ukraine
+            || lang.eq("by") // belarus
+            || lang.eq("kz") // kazakhstan
+            || lang.eq("md") // moldova
+            || lang.eq("sk") // slovakia
+            || lang.eq("si") // slovenia
+            || lang.eq("lv") // latvia
+            || lang.eq("ee") { // estonia
+
             text = russian;
+
         }
 
         bot.send_message(chat_id, text)
-            .parse_mode(ParseMode::Html).await.unwrap();
+            .parse_mode(ParseMode::Html)
+            .await
+            .unwrap();
     }
 }
