@@ -16,10 +16,20 @@ lazy_static! {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct User {
     pub id: u64,
+    pub chat_id: Option<i64>,
     pub name: String,
     pub requests_amount: u64,
     pub timestamp: u64,
     pub register_timestamp: u64,
+}
+
+pub enum UserColumn {
+    Id,
+    Name,
+    RequestsAmount,
+    Timestamp,
+    ChatId,
+    RegisterTimestamp
 }
 
 async fn read_users() -> BotResult<HashMap<u64, User>> {
@@ -50,7 +60,7 @@ pub fn current_timestamp() -> u64 {
 #[allow(dead_code)]
 pub async fn set_data(
     user_id: u64,
-    column: &str,
+    column: UserColumn,
     value: &str,
 ) -> BotResult<()> {
     let _lock = DATA_MUTEX.lock().await;
@@ -60,11 +70,12 @@ pub async fn set_data(
         .ok_or("User not found")?;
 
     match column {
-        "name" => user.name = value.to_string(),
-        "requests_amount" => user.requests_amount = value.parse()?,
-        "timestamp" => user.timestamp = value.parse()?,
-        "id" => return Err("Cannot modify user ID".into()),
-        _ => return Err("Invalid column name".into()),
+        UserColumn::Name => user.name = value.to_string(),
+        UserColumn::RequestsAmount => user.requests_amount = value.parse()?,
+        UserColumn::Timestamp => user.timestamp = value.parse()?,
+        UserColumn::Id => return Err("Cannot modify user ID".into()),
+        UserColumn::RegisterTimestamp => return Err("Cannot modify user register timestamp".into()),
+        UserColumn::ChatId => user.chat_id = value.parse().ok(),
     }
 
     write_users(&users).await?;
@@ -118,24 +129,20 @@ pub async fn remove_user(id: u64) -> BotResult<()> {
 }
 
 #[allow(dead_code)]
-pub async fn get_data(user_id: u64, column: &str) -> BotResult<Option<String>> {
+pub async fn get_data(user_id: u64, column: UserColumn) -> BotResult<Option<String>> {
     let _lock = DATA_MUTEX.lock().await;
     let users = read_users().await?;
 
-    match users.get(&user_id) {
-        Some(user) => {
-            let value = match column {
-                "id" => user.id.to_string(),
-                "name" => user.name.clone(),
-                "requests_amount" => user.requests_amount.to_string(),
-                "timestamp" => user.timestamp.to_string(),
-                "register_timestamp" => user.register_timestamp.to_string(),
-                _ => return Ok(None),
-            };
-            Ok(Some(value))
+    Ok(users.get(&user_id).and_then(|user| {
+        match column {
+            UserColumn::Id => Some(user.id.to_string()),
+            UserColumn::Name => Some(user.name.clone()),
+            UserColumn::RequestsAmount => Some(user.requests_amount.to_string()),
+            UserColumn::Timestamp => Some(user.timestamp.to_string()),
+            UserColumn::ChatId => user.chat_id.map(|id| id.to_string()),
+            UserColumn::RegisterTimestamp => Some(user.register_timestamp.to_string()),
         }
-        None => Ok(None),
-    }
+    }))
 }
 
 pub async fn get_user(id: u64) -> BotResult<Option<User>> {
