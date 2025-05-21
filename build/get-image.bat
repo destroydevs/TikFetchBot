@@ -1,3 +1,3 @@
 @echo off
-docker build -t ttdownloader .
-docker save ttdownloader -o ttdownloader.tar
+docker build -t tikfetchbot .
+docker save tikfetchbot -o TikFetchBot.tar

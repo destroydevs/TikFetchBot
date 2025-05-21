@@ -13,6 +13,7 @@ RUN apt-get update && \
 
 WORKDIR /app
 COPY /src /app/src
+COPY config.yml /app/config.yml
 COPY Cargo.toml /app/Cargo.toml
 
 RUN OPENSSL_DIR=/usr/local/musl cargo build --target x86_64-unknown-linux-musl --release

@@ -3,6 +3,6 @@ LABEL authors="destr"
 
 WORKDIR /app
 COPY .env /app/.env
-COPY ttdownloader /app/ttdownloader
+COPY TikFetchBot /app/TikFetchBot
 
-ENTRYPOINT ["./ttdownloader"]
+ENTRYPOINT ["./TikFetchBot"]
