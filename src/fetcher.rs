@@ -1,11 +1,13 @@
-use crate::data::increment_requests;
+use std::sync::Arc;
 use reqwest::{header, Client};
 use serde_json::Value;
+use crate::database::Database;
+use crate::logger::LOGGER;
 
 // https://github.com/ShaheenJawadi/tiktok-video-downloader
-pub async fn parse_tiktok_content(url: &str, id: u64) -> Result<Box<dyn Media>, String> {
+pub async fn parse_tiktok_content(url: &str, id: i64, db: &Database) -> Result<Box<dyn Media>, String> {
     let client = Client::new();
-    println!("🔍 Fetching video metadata...");
+    LOGGER.info("Fetching video metadata...");
 
     let api_url = format!("https://www.tikwm.com/api/?url={}", url);
     let response = client.get(&api_url)
@@ -36,11 +38,11 @@ pub async fn parse_tiktok_content(url: &str, id: u64) -> Result<Box<dyn Media>, 
         .unwrap_or("https://moosic.my.mail.ru/file/7aa9b68114dfa1a4581ce525a1e793b1.mp3");
 
     // adding +1 to requests_amount on users.json
-    increment_requests(id).await.unwrap();
+    db.increment_requests(id).await.unwrap();
 
     if !images_url.is_empty() {
 
-        println!("🔍 Fetching has been finished!");
+        LOGGER.success("Fetching has been finished!");
         return Ok(Box::new(
             PhotoContent {
                 title: video_title.to_string(),
@@ -54,7 +56,7 @@ pub async fn parse_tiktok_content(url: &str, id: u64) -> Result<Box<dyn Media>, 
         .as_str()
         .ok_or("Video URL not found in API response".to_string())?;
 
-    println!("🔍 Fetching has been finished!");
+    LOGGER.success("Fetching has been finished!");
 
     Ok(
         Box::from(VideoContent {
