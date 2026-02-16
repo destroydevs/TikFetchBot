@@ -15,6 +15,7 @@
 use crate::logger::LOGGER;
 use colored::Colorize;
 use config::Config;
+use reqwest::Client;
 use std::env;
 use std::fs::{create_dir_all, File};
 use std::io::{Read, Write};
@@ -40,13 +41,11 @@ async fn main() {
     LOGGER.executing("Starting bot...");
     let teloxide_bot = Bot::new(token);
 
-    let db = Arc::new(connect_to_db().await);
-
-    db.init().await.expect("Database initialization failed");
+    let client = Client::new();
 
     // start bot
     LOGGER.success("Bot started successfully!");
-    bot::start(teloxide_bot, Arc::clone(&db)).await;
+    bot::start(teloxide_bot, Arc::new(client)).await;
 }
 
 fn fetch_token() -> Result<String, Err<String>> {
