@@ -28,7 +28,7 @@ jobs:
               git clone https://github.com/destroydevs/TikFetchBot.git .
             fi
 
-            export TELOXIDE_TOKEN=${{ secrets.TELOXIDE_TOKEN }}
+            echo "TELOXIDE_TOKEN=${{ secrets.TELOXIDE_TOKEN }}" > .env
 
             docker compose up -d --build
 
