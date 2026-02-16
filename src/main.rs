@@ -48,7 +48,7 @@ async fn main() {
     bot::start(teloxide_bot, Arc::new(client)).await;
 }
 
-fn fetch_token() -> Result<String, Err<String>> {
+fn fetch_token() -> Result<String, <String>> {
     LOGGER.executing("Fetching token from environment variables...");
 
     let env_tocken = env::var("TELOXIDE_TOKEN");
