@@ -1,53 +1,33 @@
+### Quick Start Guide
 
-> Данный бот создан исключительно в образовательных целях для:
-> - Изучения работы с teloxide
-> - Практики асинхронного программирования (Tokio)
-> - Исследования механизмов обработки мультимедийного контента\
-> \
-> Контент не хранится на моих серверах.\
-> Пользователи получают только те данные, которые TikTok предоставляет публично.\
-> Проект не монетизируется и не имеет коммерческой выгоды.\
-> Используется только публичное API, доступное всем разработчикам.\
-> Я не несу ответственности за действия пользователей.
-
-### ⚡ Quick Start Guide
-
-1. **Open Bot**  
-   👉 [@DestroyGPT_Bot](https://t.me/destroygpt_bot) 👈
+1. **Open Bot in Telegram**  
+   [@DestroyGPT_Bot](https://t.me/destroygpt_bot)
 
 2. **Send TikTok URL**  
    `https://vm.tiktok.com/...`  
    `https://www.tiktok.com/...`
 
 3. **Get Content**  
-   🎬 Video (MP4) + 🎧 Audio (MP3)  
-   ⏳ Processing time: ~1-3 sec
+   Video (MP4) + 🎧 Audio (MP3)  
+   Processing time: ~1-3 sec
 
-# 🔧 **Key Features**
+# **Key Features**
 
-## ✅ Rust-Powered Core
+## Rust-Powered Core
 - Blazing-fast downloads with near-zero latency
 - Memory-safe architecture prevents crashes
 
-## ✅ Async Processing
+## Async Processing
 - Parallel downloads via Tokio runtime
 - Queue system handles multiple requests smoothly
 
-## ✅ Zero-Config Operation
-- Just send a link – no commands needed
-- Auto-detects TikTok URLs (all domains supported)
-
-## ✅ No Watermarks
+## No Watermarks
 - Original-quality videos (1080p/720p)
 - Separate high-bitrate audio extraction
 
-## ✅ Multi-Language Support
+## Multi-Language Support
 - Auto-detects user language (EN/RU)
 - Easy to add more languages
-
-## ✅ 24/7 Uptime
-- Cloud deployment ready
-- Auto-recovery from failures
 
 ✨ **No Ads** – Clean interface, zero promotions
 
@@ -88,8 +68,8 @@ Building:
 ```cargo build --release```
 
 ## How to start?
-You need create .env file in folder with the builded file.\
-.env file must containts the bot token.
+You need create environment `TELOXIDE_TOKEN` in system.\
+`TELOXIDE_TOKEN` must containts the bot token.
 
 Bot token you can get here: <a href="https://t.me/BotFather">@BotFather</a>
 

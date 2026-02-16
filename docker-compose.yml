@@ -1,0 +1,18 @@
+services:
+  rustapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tikfetchbot
+    restart: unless-stopped
+    environment:
+      - TELOXIDE_TOKEN=${TELOXIDE_TOKEN}
+      - RUST_LOG=info
+    volumes:
+      - ./data:/app/data
+    networks:
+      - bot-network
+
+networks:
+  bot-network:
+    driver: bridge

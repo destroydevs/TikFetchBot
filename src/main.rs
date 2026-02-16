@@ -1,4 +1,17 @@
-use crate::database::Database;
+//   Copyright 2025 Evgeny K.
+//
+//   Licensed under the Apache License, Version 2.0 (the "License");
+//   you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software
+//   distributed under the License is distributed on an "AS IS" BASIS,
+//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   See the License for the specific language governing permissions and
+//   limitations under the License.
+
 use crate::logger::LOGGER;
 use colored::Colorize;
 use config::Config;
@@ -10,11 +23,10 @@ use colored::control::set_override;
 use teloxide::Bot;
 use tokio::fs::write;
 
-mod fetcher;
+mod media_fetcher;
 mod bot;
 mod data;
 mod parser;
-mod database;
 mod logger;
 
 const CONFIG: &[u8] = include_bytes!("../config.yml");
@@ -22,6 +34,7 @@ const CONFIG: &[u8] = include_bytes!("../config.yml");
 #[tokio::main]
 async fn main() {
     let token = fetch_token();
+
     load_config_file().await;
 
     LOGGER.executing("Starting bot...");
@@ -36,45 +49,16 @@ async fn main() {
     bot::start(teloxide_bot, Arc::clone(&db)).await;
 }
 
-fn fetch_token() -> String {
-    LOGGER.executing("Fetching .env file...");
-    let mut file = File::open(".env").unwrap();
-    let mut bytes = [0u8;512];
+fn fetch_token() -> Result<String, Err<String>> {
+    LOGGER.executing("Fetching token from environment variables...");
 
-    let size = file.read(&mut bytes).unwrap();
+    let env_tocken = env::var("TELOXIDE_TOKEN");
+    if env_tocken.is_ok() {
+        LOGGER.success("Token fetched successfully!");
+        return Ok(env_tocken.unwrap());
+    }
 
-    let slice = &bytes[..size];
-
-    let token = std::str::from_utf8(slice).unwrap();
-    LOGGER.success(".env successfully fetched!");
-    token.to_string()
-}
-
-async fn connect_to_db() -> Database {
-    let source = config::File::with_name(get_config_file_path().as_str());
-
-    let config = Config::builder()
-        .add_source(source)
-        .build()
-        .expect("Configuration error");
-
-    let url = config.get_string("database.url").unwrap();
-    let port = config.get_int("database.port").unwrap();
-    let password = config.get_string("database.password").unwrap();
-    let username = config.get_string("database.user").unwrap();
-    let database = config.get_string("database.database").unwrap();
-
-    let mut db = Database::new(
-        url,
-        port as u16,
-        password,
-        username,
-        database
-    );
-
-    db.try_connect().await;
-
-    db
+    Err("TELOXIDE_TOKEN environment variable not set".into())
 }
 
 fn get_config_file_path() -> String {
@@ -83,8 +67,10 @@ fn get_config_file_path() -> String {
     let mut work_file: String = "config.yml".to_string();
 
     if cfg!(windows) {
+        // dos/windows systems
         work_file = format!("{}\\config\\config.yml", dir);
     } else {
+        // unix systems
         work_file = format!("{}/config/config.yml", dir);
     }
 
@@ -92,6 +78,7 @@ fn get_config_file_path() -> String {
 }
 
 async fn load_config_file() {
+    LOGGER.executing("Loading config.yml file...");
     let work_file = get_config_file_path();
 
     let file = File::open(&work_file);
@@ -100,5 +87,7 @@ async fn load_config_file() {
         write(work_file, CONFIG)
             .await
             .expect("Could not write to config.yml");
+        LOGGER.success("config.yml file created successfully!");
     }
+    LOGGER.success("config.yml file loaded successfully!");
 }

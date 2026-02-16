@@ -1,8 +1,22 @@
+//   Copyright 2025 Evgeny K.
+//
+//   Licensed under the Apache License, Version 2.0 (the "License");
+//   you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software
+//   distributed under the License is distributed on an "AS IS" BASIS,
+//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   See the License for the specific language governing permissions and
+//   limitations under the License.
+
 use crate::data::current_timestamp;
 use crate::database::{Database, User, UserColumn};
-use crate::fetcher::{parse_tiktok_content, ContentType, Media};
+use crate::media_fetcher::{parse_tiktok_content, ContentType, Media};
 use crate::parser::is_tiktok_url;
-use reqwest::Url;
+use reqwest::{Client, Url};
 use std::cmp::PartialEq;
 use std::sync::Arc;
 use teloxide::dispatching::dialogue::GetChatId;
@@ -15,9 +29,9 @@ use teloxide::Bot;
 const TEXT_LIMIT: u16 = 4096;
 const MEDIA_LIMIT: u16 = 1024;
 
-pub async fn start(bot: Bot, database: Arc<Database>) {
+pub async fn start(bot: Bot, client: Arc<Client>) {
     teloxide::repl(bot, move |bot: Bot, msg: Message| {
-        let db = Arc::clone(&database);
+        let client = Arc::clone(&client);
         async move {
             let text = match msg.text() {
                 Some(text) => text,
@@ -69,7 +83,7 @@ pub async fn start(bot: Bot, database: Arc<Database>) {
                     user_lang
                 ).await;
 
-                let media: Box<dyn Media> = match parse_tiktok_content(&text, user.id.0 as i64, &db).await {
+                let media: Box<dyn Media> = match parse_tiktok_content(&text, user.id.0 as i64, &client).await {
                     Ok(url) => url,
                     Err(e) => {
                         send_msg(

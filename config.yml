@@ -1,6 +1,1 @@
-database:
-  url: 'localhost'
-  port: 5432
-  user: 'postgres'
-  password: '123123'
-  database: 'test'
+// todo

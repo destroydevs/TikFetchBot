@@ -1,13 +1,26 @@
+//   Copyright 2025 Evgeny K.
+//
+//   Licensed under the Apache License, Version 2.0 (the "License");
+//   you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software
+//   distributed under the License is distributed on an "AS IS" BASIS,
+//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   See the License for the specific language governing permissions and
+//   limitations under the License.
+
 use std::sync::Arc;
 use reqwest::{header, Client};
 use serde_json::Value;
-use crate::database::Database;
 use crate::logger::LOGGER;
 
 // https://github.com/ShaheenJawadi/tiktok-video-downloader
-pub async fn parse_tiktok_content(url: &str, id: i64, db: &Database) -> Result<Box<dyn Media>, String> {
-    let client = Client::new();
-    LOGGER.info("Fetching video metadata...");
+pub async fn parse_tiktok_content(url: &str, id: i64, client: &Client) -> Result<Box<dyn Media>, String> {
+
+    LOGGER.info(&format!("Fetching video metadata for user ID {}...", id));
 
     let api_url = format!("https://www.tikwm.com/api/?url={}", url);
     let response = client.get(&api_url)
@@ -37,9 +50,6 @@ pub async fn parse_tiktok_content(url: &str, id: i64, db: &Database) -> Result<B
         .as_str()
         .unwrap_or("https://moosic.my.mail.ru/file/7aa9b68114dfa1a4581ce525a1e793b1.mp3");
 
-    // adding +1 to requests_amount on users.json
-    db.increment_requests(id).await.unwrap();
-
     if !images_url.is_empty() {
 
         LOGGER.success("Fetching has been finished!");
@@ -49,7 +59,7 @@ pub async fn parse_tiktok_content(url: &str, id: i64, db: &Database) -> Result<B
                 photo_urls: images_url,
                 audio_url: audio_url.to_string(),
             }
-        ))
+        ) as Box<dyn Media>)
     }
 
     let video_url = json["data"]["play"]
@@ -59,11 +69,11 @@ pub async fn parse_tiktok_content(url: &str, id: i64, db: &Database) -> Result<B
     LOGGER.success("Fetching has been finished!");
 
     Ok(
-        Box::from(VideoContent {
+        Box::new(VideoContent {
             title: video_title.to_string(),
             video_url: video_url.to_string(),
             audio_url: audio_url.to_string(),
-        })
+        }) as Box<dyn Media>
     )
 }
 
