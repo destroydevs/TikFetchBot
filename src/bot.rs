@@ -13,7 +13,6 @@
 //   limitations under the License.
 
 use crate::data::current_timestamp;
-use crate::database::{Database, User, UserColumn};
 use crate::media_fetcher::{parse_tiktok_content, ContentType, Media};
 use crate::parser::is_tiktok_url;
 use reqwest::{Client, Url};
@@ -54,8 +53,6 @@ pub async fn start(bot: Bot, client: Arc<Client>) {
                     Some(lang) => lang,
                     None => &"en".to_string()
                 };
-
-                update_user(&bot, user.id.0 as i64, chat_id, &user.first_name, user_lang, &db).await;
 
                 if !is_tiktok_url(&text) {
                     send_msg(
@@ -193,77 +190,6 @@ pub async fn start(bot: Bot, client: Arc<Client>) {
             text[0..slice_size].to_string()
         } else {
             text
-        }
-    }
-
-    async fn update_user(
-        bot: &Bot,
-        id: i64,
-        chat_id: ChatId,
-        first_name: &String,
-        user_lang: &String,
-        db: &Database
-    ) {
-        if db.has_user(id).await.unwrap() {
-            let data_user: User = db.get_user(id).await.unwrap().unwrap();
-
-            // days after last bot use
-            let time_after_last_use = (current_timestamp() - data_user.timestamp)/1000/60/60/24;
-
-            if time_after_last_use >= 3 {
-                send_msg(
-                    &bot,
-                    chat_id,
-                    "<b>🌟 Welcome back!</b>\n🌟 We missed you! 😊",
-                    "<b>🌟 С возвращением!</b>\n🌟 Мы рады снова видеть вас! 😊",
-                    user_lang
-                ).await;
-            }
-
-            if !data_user.name.eq(first_name) {
-
-                db.set_data(id,UserColumn::Name,first_name)
-                    .await
-                    .unwrap();
-
-            }
-
-            let data_chat_id = match db.get_data(id, UserColumn::ChatId).await {
-                Ok(chat_id) => chat_id,
-                _ => {
-                    None
-                }
-            };
-
-            if data_chat_id.is_none() {
-
-                db.set_data(id, UserColumn::ChatId, chat_id.0.to_string().as_str())
-                    .await
-                    .unwrap();
-
-            }
-
-        } else {
-            let data_user = User {
-                id,
-                chat_id: Some(chat_id.0),
-                name: first_name.to_string(),
-                requests_amount: 1,
-                timestamp: current_timestamp(),
-                register_timestamp: current_timestamp(),
-            };
-
-           db.add_user(data_user).await.unwrap();
-
-            // wellcome message
-            send_msg(
-                &bot,
-                chat_id,
-                "<b>🎉 Welcome aboard!</b>\n🎉 It looks like you're new here. Enjoy our bot for free - no limits! 😊",
-                "<b>🎉 Добро пожаловать!</b>\n🎉 Похоже, вы здесь впервые. Пользуйтесь ботом бесплатно - без ограничений! 😊",
-                user_lang
-            ).await;
-
         }
     }
 }
