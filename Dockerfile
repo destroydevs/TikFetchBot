@@ -1,21 +1,30 @@
 FROM rust:latest as builder
 
 RUN apt-get update && \
-    apt-get install -y cmake musl-tools libssl-dev wget gcc pkg-config musl-dev && \
-    rustup target add x86_64-unknown-linux-musl && \
-    wget https://www.openssl.org/source/openssl-1.1.1w.tar.gz && \
-    tar xzf openssl-1.1.1w.tar.gz && \
-    cd openssl-1.1.1w && \
-    ./Configure no-shared no-zlib no-async -fPIC --prefix=/usr/local/musl linux-x86_64 && \
-    make depend && \
-    make -j$(nproc) && \
-    make install
+    apt-get install -y cmake libssl-dev pkg-config gcc && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY /src /app/src
-COPY config.yml /app/config.yml
-COPY Cargo.toml /app/Cargo.toml
 
-RUN OPENSSL_DIR=/usr/local/musl cargo build --target x86_64-unknown-linux-musl --release
+COPY Cargo.toml ./
+RUN mkdir src && echo "fn main() {}" > src/main.rs && \
+    cargo build --release && \
+    rm -rf src
 
-RUN ./target/x86_64-unknown-linux-musl/release/TikFetchBot
+COPY src ./src
+COPY config.yml ./config.yml
+
+RUN cargo build --release
+
+FROM debian:bookworm-slim
+
+RUN apt-get update && \
+    apt-get install -y ca-certificates libssl3 && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=builder /app/target/release/TikFetchBot /app/TikFetchBot
+COPY --from=builder /app/config.yml /app/config.yml
+
+CMD ["./TikFetchBot"]
