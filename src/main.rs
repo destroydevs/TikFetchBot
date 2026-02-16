@@ -36,6 +36,8 @@ const CONFIG: &[u8] = include_bytes!("../config.yml");
 async fn main() {
     let token = fetch_token();
 
+    token.unwrap_or("runtime error 0000".to_string());
+
     load_config_file().await;
 
     LOGGER.executing("Starting bot...");
